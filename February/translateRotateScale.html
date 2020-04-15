@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<style>
+			body {
+				background-color: #ffffff;
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+	
+		<div>
+			<img id="IdImgRotate" src="icons/myRotate.png" alt="rotate" title="rotate">
+			<img id="IdImgTransate" src="icons/mytranslate.png" alt="translate" title="translate">
+			<img id="IdImgScale" src="icons/myScale.png" alt="scale" title="scale">
+			<img id="IdImgToggle" src="icons/myChangeObject.png" alt="toggle" title="toggle">
+		<div>
+	
+	
+	  
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/94/three.min.js"></script>
+		<script src="js/controls/TransformControls.js"></script>
+		
+		
+		
+		<script>
+
+			var camera, scene, renderer;
+			var transformer;
+			var mesh;//a placeholder to be the target of transformer
+			var intStatus;//to toggle through meshes
+			var material0, material1, material2;
+			var geometry0, geometry1, geometry2;
+			var mesh0, mesh1, mesh2;
+
+			function init() {
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xffffff );
+
+
+				
+				//make 3 objects(different shapes)
+				geometry0 = new THREE.ConeGeometry( 1, 2, 32 );
+				material0 = new THREE.MeshLambertMaterial( { color: 0x00ff00 } );
+
+				mesh0 = new THREE.Mesh( geometry0, material0 );
+				//position
+				mesh0.position.x = -4;
+				//mesh0,position.z = 3;
+				scene.add( mesh0 );
+				//2
+				geometry1 = new THREE.BoxBufferGeometry( 2, 2, 2 );
+				material1 = new THREE.MeshLambertMaterial( { color: 0xff0000 } );
+
+				mesh1 = new THREE.Mesh( geometry1, material1 );
+				scene.add( mesh1 );
+				//3
+				geometry2 = new THREE.CylinderGeometry( 1, 1, 2, 32 );
+				material2 = new THREE.MeshLambertMaterial( { color: 0x0000ff } );
+
+				mesh2 = new THREE.Mesh( geometry2, material2 );
+				//position
+				mesh2.position.x = 4;
+				//mesh2.position.z = -3;
+				scene.add( mesh2 );
+				
+				mesh = mesh0;
+				
+				
+				//Create a PointLight
+				var light = new THREE.PointLight( 0xffffff, 1, 100 );
+				light.position.set( 4, 10, 4 );
+				scene.add( light );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );	
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 100 );
+				camera.position.x = 5;
+				camera.position.y = 5;
+				camera.position.z = 5;
+				camera.lookAt(0,0,0);				
+				camera.updateProjectionMatrix();
+				//////////////////////////////////////////////////////////////////
+				//transformer stuff
+								transformer = new THREE.TransformControls(camera, renderer.domElement);
+				
+				// Optional settings:
+				transformer.mode = "translate"; // other choices - "rotate" or "scale"
+
+				// Link object to be manipulated by this transformer control widget.
+				transformer.attach(mesh);
+				
+				// Use transformer.detach() when the transform control is not needed.  Will hide the control widget.
+				
+				// Be sure to make the size of the transform widget larger than the object being controlled.
+				transformer.size = 3;
+				
+				// Display or hide axis arrows.  Default is true.
+				transformer.showX = true;
+				transformer.showY = true;
+				transformer.showZ = true;
+				
+				// The THREE.TransformControls is a graphical object so must be included in the scene to be rendered.
+				scene.add(transformer);
+				// Assign callback for our animate function that re-paints the scene anytime the transform changes.
+				transformer.addEventListener('change', animate);
+				//end transformer stuff
+				///////////////////////////////////////////////////////////////////
+				
+				// Bind event callback functions to respond to button clicks.
+				var guiTranslateButton = document.getElementById("IdImgTransate");
+				guiTranslateButton.addEventListener("click", onClickTranslate);
+				
+				// Bind event callback functions to respond to button clicks.
+				var guiRotateButton = document.getElementById("IdImgRotate");
+				guiRotateButton.addEventListener("click", onClickRotate);
+				
+				//another button's bind
+				var guiScaleButton = document.getElementById("IdImgScale");
+				guiScaleButton.addEventListener("click", onClickScale);
+				
+				//another button's bind
+				var guiToggleButton = document.getElementById("IdImgToggle");
+				guiToggleButton.addEventListener("click", onClickChangeObject);
+			}
+			//what happens when you click translate, rotate, change object, and scale
+			
+			function onClickRotate()
+			{
+				//alert("Rotate");
+				transformer.mode = "rotate";
+			}
+			
+			function onClickTranslate()
+			{
+				//alert("Translate");
+				transformer.mode = "translate";
+			}
+			
+			function onClickScale()
+			{
+				//alert("Scale");
+				transformer.mode = "scale";
+			}
+			//I realize I don't have to use mesh = someOtherMesh
+			function onClickChangeObject()
+			{
+				//alert("Change Object");
+				if(intStatus == 0){
+					intStatus += 1;
+					mesh = mesh1;
+					transformer.attach(mesh);
+				}
+				else if(intStatus == 1){
+					intStatus += 1;
+					mesh = mesh2;
+					transformer.attach(mesh);
+				}
+				else{
+					intStatus = 0;
+					mesh = mesh0;
+					transformer.attach(mesh);
+				}
+			}
+
+			function animate( time ) {				
+				renderer.render( scene, camera );
+				requestAnimationFrame( animate );
+			}
+
+			init();
+			requestAnimationFrame( animate );
+
+		</script>
+	</body>
+</html>
