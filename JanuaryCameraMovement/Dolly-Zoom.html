@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Homework 3</title>
+	<meta charset="utf-8">
+</head>
+<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/94/three.min.js"></script>
+		<script>
+//AJ Williams
+			var camera, scene, renderer;
+			var geometry, material, mesh0, mesh1, mesh2;
+			var floatPrevTimeMS = undefined;//will hold the last time for animate function
+			var floatSizeCap = 4;//max size I can let mesh1 grow, this number keeps the entire sphere visible
+			var intMoveCap = 10;//max distance in x direction I can let mesh0 move
+			var cameraMoveCapZ = 0;//max camera distance away me; range is from 15 to 0
+			//var cameraMinPanAngle = 0;//camera pan angles allowed. I think it will be in radians soo...Starts at 0. This is pi/6
+			//var cameraMaxPanAngle = -3.14;//for a pan to the right, it will be negative
+			//var cameraMinZoomAngle = 25;//camera can zoom to lens angles between 20 and 160 degrees...Starts at 50 according to docs
+			var cameraMaxZoomAngle = 155;//was 130
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 40);//last number cobtrols camera's depth of vision
+				camera.position.z = 8;
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xffffff );
+				//mesh0
+				geometry = new THREE.SphereGeometry(1);//move for HW3
+				material = new THREE.MeshBasicMaterial( { color: 0x8A2BE2, wireframe: true } );
+
+				mesh0 = new THREE.Mesh( geometry, material );
+				mesh0.position.z = -5;
+				mesh0.position.y = 3;
+				mesh0.position.x = -5;
+				scene.add( mesh0 );
+				//mesh1
+				geometry = new THREE.SphereGeometry(1);
+				material = new THREE.MeshBasicMaterial( { color: 0x0000ff, wireframe: true } );
+
+				mesh1 = new THREE.Mesh( geometry, material );//move for HW3
+				mesh1.position.z = -15;
+				mesh1.position.y = -2;
+				mesh1.position.x = 3;
+				scene.add( mesh1 );
+				//mesh2
+				geometry = new THREE.SphereGeometry(1);
+				material = new THREE.MeshBasicMaterial( { color: 0x000000, wireframe: true } );
+
+				mesh2 = new THREE.Mesh( geometry, material );//This one gets to be my STAR! HW3
+				mesh2.position.y = 0;
+				mesh2.position.z = -2;
+				scene.add( mesh2 );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );				
+				
+			}
+			function animate( floatTimeMS ){//current time in milliseconds
+				var floatElapsedTimeMS = 0;//tracks time between animation renders in milliseconds
+				//if there is a previous time, use it.
+				if(floatPrevTimeMS != undefined)
+					floatElapsedTimeMS = floatTimeMS - floatPrevTimeMS;
+				var floatElapsedSec = floatElapsedTimeMS / 1000;//save elapsed time in seconds
+				
+				//Mesh 0, Position  NEED TO DO
+				var floatVelUnitsSec = 1; //Velocity in units per second. Units. Units. I don't know what the units are but it looks like inches
+				var floatElapsedDistance = floatElapsedSec * floatVelUnitsSec;//calculate intended movement for this frame
+				if(mesh0.position.x <= intMoveCap)//if position is not over x-direction cap
+					mesh0.position.x += floatElapsedDistance;//move mesh0 to the right
+				
+				//Mesh 1, Size
+				var floatGrowSec = 0.05;//grow 5/100 every second. P.S. 1/100 was way too slow
+				var floatElapsedScale = floatElapsedSec * floatGrowSec;//calculate intended scaling for this frame
+				//edit the scale here
+				//get big
+				if(mesh1.scale.x <= floatSizeCap){//if size is not over cap, then grow
+					mesh1.scale.x += floatElapsedScale;
+					mesh1.scale.y += floatElapsedScale;
+					mesh1.scale.z += floatElapsedScale;
+				}
+				
+				
+				//Mesh 2, Rotation
+				var floatRotRadSec = 0.785; //Angular velocity I want = pi/4
+				var floatElapsedRad = floatElapsedSec * floatRotRadSec;//calculate intended rotation for this frame
+				mesh2.rotation.y += floatElapsedRad;//do the rotation on mesh 2
+				
+				//HW3 Camera Action: Dolly-Zoom
+				//First- the Zoom I just did. At this point I realized the fov was in degrees...
+				var floatFovDegSec = 50; //Angular velocity I want to zoom = pi... Thought for Dolly Zoom. Is pi rad/s zoom and 3.14 u/s going to get the effect I want? Nope!
+				var floatCamElapsedDeg = floatElapsedSec * floatFovDegSec;//calculate intended fov change for this frame
+				if(camera.fov <= cameraMaxZoomAngle)//if field of view is greater than specified minimum
+					camera.fov += floatCamElapsedDeg;//zoom in
+				//Dolly Movement
+				var floatCamVelUnitsSec = 5; //Velocity in units per second of camera dolly speed.
+				var floatCamElapsedDistance = floatElapsedSec * floatCamVelUnitsSec;//calculate intended movement for this frame
+				if(camera.position.z >= cameraMoveCapZ)//if position is not over z-direction cap
+					camera.position.z -= floatCamElapsedDistance;//move camera away from subject
+					
+				//I wanted the disparity between zoom and dolly to be small
+				//50 - 130 = 80//documentation said this started at 50. My tests say it starts at 75 so revise to 75 - 155
+				//8 - 0 = 8
+				
+				//10deg/sec to 80deg = 8sec
+				//1u/sec to 8u = 8sec
+				
+				//Then I shortened the time to 2 seconds by multiplying both by 5.
+				
+				//Finish up
+				//HW3 Addition  for camera update
+				camera.updateProjectionMatrix();
+				
+				floatPrevTimeMS = floatTimeMS;//update the previous time.
+				renderer.render( scene, camera );//render scene
+				requestAnimationFrame( animate );//recursive call
+				
+				
+			}
+			
+			init();
+			//alert("first scale number is " + mesh1.scale.x);
+			//alert("first fov number is " + camera.fov);//starts at 75
+			requestAnimationFrame( animate );
+
+		</script>
+	</body>
+</html>

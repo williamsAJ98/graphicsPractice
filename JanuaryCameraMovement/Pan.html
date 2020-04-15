@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<title>Homework 4</title>
+	<meta charset="utf-8">
+</head>
+<body>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/94/three.min.js"></script>
+				<script>
+
+			var camera, scene, renderer;
+			var geometry, material, mesh;
+			var tire0, tire1, tire2, tire3;
+			var body0, body1, body2, body3, body4, body5;
+			var head0, head1, head2, head3, head4, head5;
+
+			function init() {
+
+				camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 10 );
+				camera.position.z = 3;
+
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0xffffff );
+
+				// Create TextureLoader object.
+				var textureLoader = new THREE.TextureLoader();
+				
+				// The simplest way to import a texture or other file resource is by using
+				// a Web-hosted URL such as this sample image borrowed from Stemkowski's Three.JS demos.
+				// Home page: https://stemkoski.github.io/Three.js/
+				// https://stemkoski.github.io/Three.js/Texture-Repeat.html
+				
+				// Commented-out example suitable for an app that loads only one texture.
+				// Construct a TextureLoader and then invoke its load method all in one line.
+				// var texture = new THREE.TextureLoader().load( 'https://stemkoski.github.io/Three.js/images/checkerboard.jpg' );
+        
+				// Use our textureLoader object to load each texture needed by your app.
+				var texture = textureLoader.load('https://stemkoski.github.io/Three.js/images/crate.gif');
+				
+				var geometry = new THREE.BoxBufferGeometry( 2, 2, 2 );
+				var material = new THREE.MeshBasicMaterial( { map: texture } );
+
+				mesh = new THREE.Mesh( geometry, material );
+				scene.add( mesh );
+
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );				
+				
+			}
+
+			//function animate( time ) {
+
+				//mesh.rotation.x = time * 0.0005;
+				//mesh.rotation.y = time * 0.001;
+
+				//renderer.render( scene, camera );
+				//requestAnimationFrame( animate );
+
+			//}
+
+			init();
+			//requestAnimationFrame( animate );
+
+		</script>
+	</body>
+</html>
