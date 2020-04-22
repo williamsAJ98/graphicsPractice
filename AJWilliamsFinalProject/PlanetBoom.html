@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html>
+<!-- AJ Williams PlanetBoom Project -->
+
+<!-- The resources for particle physics were not that helpful so I ended up doing it how I imagine it to be -->
+<!-- It still matches the description of particle explosions -->
+	<head>
+		<meta charset="utf-8">
+		<style>
+			body {
+				background-color: #000000;
+				margin: 0;
+				overflow: hidden;
+			}
+		</style>
+	</head>
+	<body>
+		
+		<div>
+			<img id="IdImgAll" src="icons/viewAll.png" alt="view all" title="view all">
+			<img id="IdImgBlow" src="icons/blow.png" alt="explode" title="explode">
+			<img id="IdImgMercury" src="icons/mercury.png" alt="mercury" title="mercury">
+			<img id="IdImgVenus" src="icons/venus.png" alt="venus" title="venus">
+			<img id="IdImgEarth" src="icons/earth.png" alt="earth" title="earth">
+			<img id="IdImgMars" src="icons/mars.png" alt="mars" title="mars">
+			<img id="IdImgJupiter" src="icons/jupiter.png" alt="jupiter" title="jupiter">
+			<img id="IdImgSaturn" src="icons/saturn.png" alt="saturn" title="saturn">
+			<img id="IdImgUranus" src="icons/uranus.png" alt="uranus" title="uranus">
+			<img id="IdImgNeptune" src="icons/neptune.png" alt="neptune" title="neptune">
+		<div>
+	
+	
+	  
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/94/three.min.js"></script>
+		<script src="myPlanet.js"></script>
+		<script src="ParticleSystem.js"></script>
+		
+		
+		
+		<script>
+			var camera, scene, renderer;
+			var geometry, material, mesh;
+			var sun, sunVisual, sunMat, sunGeo, backGeo, backMat, background;
+			var mercuryMat, venusMat, earthMat, marsMat, jupiterMat, saturnMat, uranusMat, neptuneMat, lunaMat, ringMat;//textures
+			var mercuryGeo, venusGeo, earthGeo, marsGeo, jupiterGeo, saturnGeo, uranusGeo, neptuneGeo, lunaGeo, jRingGeo, sRingGeo, uRingGeo;//geometries
+			var matList = [];
+			var planetList = [];
+			var objectList = [];
+			var planet, luna, ring;
+			var floatPrevTimeMS = undefined;
+			var angularVelocityList = [16, 11, 10, 8, 4, 3, 2, 1.8];//velocities actually to scale- everything else is not to scale ;)
+      		var radiiList = [20, 22, 25, 20, 40, 50, 32, 24]//radii of the planets- when to scale, the inner planets look like dots so this'll do
+    		var distanceList = [];
+    		var floatElapsedSec, floatElapsedTimeMS;
+			var observedPlanet = 2;//controls the planet being watched, goes from 0 - 7. Sorry Pluto
+    		var resetState = true;
+			var blowUp = false;
+			var ps, particle, particleGeo;
+			
+			//gui----------
+			// Bind event callback functions to respond to button clicks.
+			//see all planets
+			var guiAllButton = document.getElementById("IdImgAll");
+			guiAllButton.addEventListener("click", viewAllPlanets);
+			//blow up
+			var guiBlowButton = document.getElementById("IdImgBlow");
+			guiBlowButton.addEventListener("click", blowButton);
+			//planet venus
+			var guiVenusButton = document.getElementById("IdImgVenus");
+			guiVenusButton.addEventListener("click", focusVenus);
+			//planet mercury
+			var guiMercuryButton = document.getElementById("IdImgMercury");
+			guiMercuryButton.addEventListener("click", focusMercury);
+			//planet earth
+			var guiEarthButton = document.getElementById("IdImgEarth");
+			guiEarthButton.addEventListener("click", focusEarth);
+			//planet mars
+			var guiMarsButton = document.getElementById("IdImgMars");
+			guiMarsButton.addEventListener("click", focusMars);
+			//planet jupiter
+			var guiJupiterButton = document.getElementById("IdImgJupiter");
+			guiJupiterButton.addEventListener("click", focusJupiter);
+			//planet saturn
+			var guiSaturnButton = document.getElementById("IdImgSaturn");
+			guiSaturnButton.addEventListener("click", focusSaturn);
+			//planet uranus
+			var guiUranusButton = document.getElementById("IdImgUranus");
+			guiUranusButton.addEventListener("click", focusUranus);
+			//planet neptune
+			var guiNeptuneButton = document.getElementById("IdImgNeptune");
+			guiNeptuneButton.addEventListener("click", focusNeptune);
+
+			function init() {
+				//camera
+				camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 7000);
+				camera.position.z = 3000;
+				camera.position.y = 2000;
+				camera.lookAt(0,0,800);
+				camera.updateProjectionMatrix();
+				
+				//scene
+				scene = new THREE.Scene();
+				scene.background = new THREE.Color( 0x000000 );
+				
+				//sun, planets, and moons
+        		makeObjects();
+				
+				//render
+				renderer = new THREE.WebGLRenderer( { antialias: true } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				document.body.appendChild( renderer.domElement );				
+				
+				if(resetState == false){
+					focusUp();
+				}
+					
+
+			}
+			function makeObjects(){
+				//background
+				backMat = new THREE.TextureLoader().load('https://i.ibb.co/4VDq5nV/2k-stars-milky-way.jpg');
+        		material = new THREE.MeshBasicMaterial( { map: backMat } );
+        		backGeo = new THREE.PlaneGeometry(20000,20000, 20,20);
+        		background = new THREE.Mesh(backGeo, material);
+        		scene.add(background);
+        		background.position.z = -3000;
+				background.rotation.x = -45;
+
+				//make sun
+				sunMat = new THREE.TextureLoader().load( 'https://i.ibb.co/VDs8h5t/2k-sun.jpg' );//sun
+				sunGeo = new THREE.SphereGeometry(433, 32, 32);//1 unit = 1000mi
+				//sphere geometry already decided
+				material = new THREE.MeshBasicMaterial( { map: sunMat } );
+				sun = new THREE.Mesh(sunGeo, material);
+				scene.add(sun);
+				
+				//--Planets 
+				//textures
+				mercuryMat = new THREE.TextureLoader().load( 'https://i.ibb.co/KmVSNrz/2k-mercury.jpg' );//mercury
+				venusMat = new THREE.TextureLoader().load( 'https://i.ibb.co/SdMNFSK/2k-venus-atmosphere.jpg' );//venus
+				earthMat = new THREE.TextureLoader().load( 'https://i.ibb.co/Dt0XYht/2k-earth-daymap.jpg' );//earth
+				marsMat = new THREE.TextureLoader().load( 'https://i.ibb.co/ZSsYck6/2k-mars.jpg' );//mars
+				jupiterMat = new THREE.TextureLoader().load( 'https://i.ibb.co/hDmfvgp/2k-jupiter.jpg' );//jupiter
+				saturnMat = new THREE.TextureLoader().load( 'https://i.ibb.co/HnDnBtZ/2k-saturn.jpg' );//saturn
+				uranusMat = new THREE.TextureLoader().load( 'https://i.ibb.co/6YHr0V4/2k-uranus.jpg' );//uranus
+				neptuneMat = new THREE.TextureLoader().load( 'https://i.ibb.co/fNNKh0D/2k-neptune.jpg' );//neptune
+				//three js sphere geometries
+				mercuryGeo = new THREE.SphereGeometry(20, 32, 32);
+				venusGeo = new THREE.SphereGeometry(22, 32, 32);
+				earthGeo = new THREE.SphereGeometry(25, 32, 32);
+				marsGeo = new THREE.SphereGeometry(20, 32, 32);
+				jupiterGeo = new THREE.SphereGeometry(40, 32, 32);
+				saturnGeo = new THREE.SphereGeometry(50, 32, 32);
+				uranusGeo = new THREE.SphereGeometry(32, 32, 32);
+				neptuneGeo = new THREE.SphereGeometry(34, 32, 32);
+
+        		//distanceList
+        		for (var i = 0; i < 8; i++){
+			    	distanceList.push((1 + i) * 300 + 433);
+		    	}
+				
+				material = new THREE.MeshBasicMaterial( { map: mercuryMat } );
+				mesh = new THREE.Mesh(mercuryGeo, material);
+        		objectList.push(mesh);
+				
+				material = new THREE.MeshBasicMaterial( { map: venusMat } );
+				mesh = new THREE.Mesh(venusGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: earthMat } );
+				mesh = new THREE.Mesh(earthGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: marsMat } );
+				mesh = new THREE.Mesh(marsGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: jupiterMat } );
+				mesh = new THREE.Mesh(jupiterGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: saturnMat } );
+				mesh = new THREE.Mesh(saturnGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: uranusMat } );
+				mesh = new THREE.Mesh(neptuneGeo, material);
+				objectList.push(mesh);
+
+				material = new THREE.MeshBasicMaterial( { map: neptuneMat } );
+				mesh = new THREE.Mesh(uranusGeo, material);
+				objectList.push(mesh);
+
+				
+				//------
+				//add planets to sun and solarSystem
+				for (var i = 0; i < 8; i++){
+          			planet = new myPlanet(objectList[i], sun);
+          			planetList.push(planet);
+					sun.add(objectList[i]);
+          			planetList[i].distanceFromSun = distanceList[i];
+          			planetList[i].angularVelocity = angularVelocityList[i];
+				}
+				//rings
+				//jupiter
+				ringMat = new THREE.TextureLoader().load('https://i.ibb.co/hY7PbyZ/2k-saturn-ring-alpha.png');
+				jRingGeo = new THREE.RingGeometry(70, 80, 32);
+				material = new THREE.MeshBasicMaterial( { map: ringMat } );
+				ring = new THREE.Mesh(jRingGeo, material);
+				planetList[4].addMoon(ring, 0, 0, 0, false, true, 0);
+				//saturn
+				sRingGeo = new THREE.RingGeometry(60, 120, 64);
+				material = new THREE.MeshBasicMaterial( { map: ringMat } );
+				ring = new THREE.Mesh(sRingGeo, material);
+				planetList[5].addMoon(ring, 0, 0, 0, false, true, 0);
+				//uranus
+				ringMat = new THREE.TextureLoader().load('https://i.ibb.co/hY7PbyZ/2k-saturn-ring-alpha.png');
+				uRingGeo = new THREE.RingGeometry(52, 55, 32);
+				material = new THREE.MeshBasicMaterial( { map: ringMat } );
+				ring = new THREE.Mesh(uRingGeo, material);
+				planetList[6].addMoon(ring, 0, 0, 0, true, true, 0);
+
+				//moons
+				//luna
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/8mzLmbV/2k-moon.jpg');
+				lunaGeo = new THREE.SphereGeometry(5, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[2].addMoon(luna, 20, 25, 2,  false, false, 0, 0);
+				//mars- phoboos
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/8mzLmbV/2k-moon.jpg');
+				lunaGeo = new THREE.SphereGeometry(5, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[3].addMoon(luna, 22, 20, 0,  false, false, 0, 1);
+				//mars- deimos
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/x6QdrgJ/2k-ceres-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(4, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[3].addMoon(luna, 12, 20, 2,  false, false, 1, 1);
+				//jupier- europa
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/6YHr0V4/2k-uranus.jpg');
+				lunaGeo = new THREE.SphereGeometry(5, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 12, 40, 2,  false, false, 0.3, -0.5);
+				//jupier- io
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/7zXQH5d/2k-makemake-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(4, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 17, 40, 2,  false, false, 0, -1);
+				//jupier- ganymede
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/x6QdrgJ/2k-ceres-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(4, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 25, 40, 2,  false, false, 3.14, 1);
+				//jupier- callisto
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/x6QdrgJ/2k-ceres-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(5, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 35, 40, 2,  false, false, 2.1, -0.8);
+				//jupier- adrastea
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/gvcqXRW/2k-haumea-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(4, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 44, 40, 2,  false, false, 1.8, -1.2);
+				//jupier- thebe
+				lunaMat = new THREE.TextureLoader().load('https://i.ibb.co/gvcqXRW/2k-haumea-fictional.jpg');
+				lunaGeo = new THREE.SphereGeometry(2, 32, 32);
+				material = new THREE.MeshBasicMaterial( { map: lunaMat } );
+				luna = new THREE.Mesh(lunaGeo, material);
+				planetList[4].addMoon(luna, 52, 40, 2,  false, false, 3.5, .4);
+				
+				
+			}
+			
+
+			function animate( floatTimeMS ) {	
+				floatElapsedTimeMS = 0;//tracks time between animation renders in milliseconds
+				//if there is a previous time, use it.
+				if(floatPrevTimeMS != undefined){
+					floatElapsedTimeMS = floatTimeMS - floatPrevTimeMS;
+				}
+				floatElapsedSec = floatElapsedTimeMS / 1000;//save elapsed time in seconds
+				//alert(floatElapsedSec);
+				if(resetState){
+					if(blowUp){
+						planetList[observedPlanet].setDestroyed(true);
+						if(ps.getLifetime() > 0){
+							ps.activateParticleSystem(floatElapsedSec);
+						}
+						else{
+			  
+							blowUp = false;
+						}
+					}
+
+					//lets do this
+					for(var i = 0; i < 8; i++){
+						if(i != 6 && !planetList[i].getDestroyed()){
+							planetList[i].planetMesh.rotation.y = floatTimeMS * 0.0001;
+						}
+						else if(!planetList[i].getDestroyed()){
+							planetList[i].planetMesh.rotation.x = floatTimeMS * 0.0001;
+						}
+						if(!planetList[i].getDestroyed()){
+							planetList[i].orbitFrame(floatElapsedSec);
+						}
+					}
+				}
+
+        		//keep the camera focused on existing planet
+				else{
+					if(planetList[observedPlanet].getDestroyed() == false){
+						planetList[observedPlanet].orbitMoon(floatElapsedSec);
+					
+						if(observedPlanet != 6){
+							planetList[observedPlanet].planetMesh.rotation.y = floatTimeMS * 0.0001;
+						}
+						else{
+							planetList[observedPlanet].planetMesh.rotation.x = floatTimeMS * 0.0001;
+						}
+					
+						if(!blowUp){
+							focusUp();//call to set cam to planet it should be watching
+						}
+					}
+					//Time to wreck it
+					if(blowUp){
+						planetList[observedPlanet].setDestroyed(true);
+						if(ps.getLifetime() > 0){
+							ps.activateParticleSystem(floatElapsedSec);
+						}
+						else{
+			  
+							blowUp = false;
+						}
+					}
+				}
+
+				floatPrevTimeMS = floatTimeMS;
+				renderer.render( scene, camera );
+				requestAnimationFrame( animate );
+			}
+			//focuses camera on observed planet
+			function focusUp(){
+				camera.updateProjectionMatrix();
+				camera.fov = 15;//15
+				camera.position.x = planetList[observedPlanet].planetMesh.position.x;
+				camera.position.y = planetList[observedPlanet].planetMesh.position.y + 100;
+				camera.position.z = planetList[observedPlanet].planetMesh.position.z + 600;
+				camera.lookAt(planetList[observedPlanet].planetMesh.position);
+				camera.updateProjectionMatrix();
+			}
+			//makes particle system and initiates explosion animation
+			function blowUpies(){
+				//for jupiter
+				
+				//make particleSystem if not already destroyed
+				if(!planetList[observedPlanet].getDestroyed()){
+					ps = new ParticleSystem(planetList[observedPlanet].planetMesh, sun);
+				}
+				particleGeo = new THREE.SphereGeometry(.5, 5, 5);
+				
+				//planetList[observedPlanet].planetMesh.add(particle);
+				for (var i = 0; i < 2000; i++){
+					particle = new THREE.Mesh(particleGeo, material);
+					ps.addParticle(particle, 40);
+				}
+				blowUp = true;
+			}
+			//buttons----
+			function viewAllPlanets()//go to view all planets view
+			{
+				
+				viewAll();
+				//alert("Translate");
+				//transformer.mode = "translate";
+			}
+			//mercury
+			function focusMercury(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: mercuryMat } );//make particle with planet's material
+				observedPlanet = 0;
+				viewPlanet();}
+			}
+			//venus
+			function focusVenus(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: venusMat } );//make particle with planet's material
+				observedPlanet = 1;
+				viewPlanet();}
+			}
+			//earf
+			function focusEarth(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: earthMat } );//make particle with planet's material
+				observedPlanet = 2;
+				viewPlanet();}
+			}
+			//mars
+			function focusMars(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: marsMat } );//make particle with planet's material
+				observedPlanet = 3;
+				viewPlanet();}
+			}
+			//jupiter
+			function focusJupiter(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: jupiterMat } );//make particle with planet's material
+				observedPlanet = 4;
+				viewPlanet();}
+			}
+			//saturn
+			function focusSaturn(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+				material = new THREE.MeshBasicMaterial( { map: saturnMat } );//make particle with planet's material
+				observedPlanet = 5;
+				viewPlanet();}
+			}
+			//uranus
+			function focusUranus(){
+				if(!blowUp){//no switching while another planet is getting destroyed
+					material = new THREE.MeshBasicMaterial( { map: uranusMat } );//make particle with planet's material
+					observedPlanet = 6;
+					viewPlanet();
+				}
+			}
+			//my boi neptune
+			function focusNeptune(){
+				//resetState = false;
+				if(!blowUp){//no switching while another planet is getting destroyed
+					material = new THREE.MeshBasicMaterial( { map: neptuneMat } );//make particle with planet's material
+					observedPlanet = 7;
+					viewPlanet();
+				}
+			}
+			//blow up
+			function blowButton(){
+				//focusUp();
+				if(!blowUp){
+					blowUpies();
+				}
+			}
+			//set camera to see all
+			function viewAll(){
+				resetState = true;
+				camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 7000);
+				camera.position.z = 3000;
+				camera.position.y = 2000;
+				camera.lookAt(0,0,800);
+				camera.updateProjectionMatrix();
+			}
+			//set camera to see a planet and whatever is behind it
+			function viewPlanet(){
+				if(!planetList[observedPlanet].getDestroyed()){
+					resetState = false;
+					focusUp();
+				}
+			}
+
+		init();
+		requestAnimationFrame( animate );
+		</script>
+	</body>
+</html>

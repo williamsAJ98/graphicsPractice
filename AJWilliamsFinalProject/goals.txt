@@ -1,0 +1,34 @@
+Polygon Mesh Objects
+
+1. Sphere objects created
+
+User Input/Interaction
+
+2. Clicking a planet name shows the planet selected
+
+3. Clicking view all restores to full planetary view
+
+4. Clicking obliterate causes the selected planet to be destroyed
+
+Texture Mapping
+
+5. Planet meshes look like the surface of the actual planet
+
+Hierarchical transforms to represent the solar system
+
+6. Planets are children of the sun
+
+7. Moons are children of their planets
+
+Particle Physics-
+
+1. The sphere mesh is removed
+
+2. Particles emit at source (cannon nozzle or landing point of projectile)
+
+3. Particles vary in color of planet/moon that is exploding
+
+4. Particles move outwards with force of explosion (no gravity)
+
+5. Particles expire (vanish) after N = 4 seconds
+
